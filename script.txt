@@ -1,372 +1,43 @@
--- Definição de variáveis globais
-local settings = {
-    Teleport = false,
-    Collect = false,
-    OpenAllChests = false,
-    Delete = false,
-    TeleportDelay = 0.2,
-    AutoCollectDelay = 0.1
-}
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
--- Nomes dos baús e itens adicionais que podem ser coletados
-local baus = {"DarkChest_p", "Weeping Chest-p"}
-local outrosItens = {"Coin", "Gem"}
+-- Função para criar um rótulo acima do jogador
+local function createESP(player)
+    local espLabel = Instance.new("BillboardGui")
+    espLabel.Size = UDim2.new(0, 100, 0, 50)
+    espLabel.Adornee = player.Character.Head
+    espLabel.AlwaysOnTop = true
 
--- Função para verificar se um item é coletável
-local function ehColetavel(item)
-    for _, nome in ipairs(baus) do
-        if item.Name == nome then
-            return true
-        end
-    end
-    for _, nome in ipairs(outrosItens) do
-        if item.Name == nome then
-            return true
-        end
-    end
-    return false
-end
--- Remover itens existentes
-for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
-    if v.Name == "FloatPath" then
-        v:Destroy()
-    end
-end
+    local textLabel = Instance.new("TextLabel", espLabel)
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = Color3.new(1, 0, 0) -- Cor do texto (vermelho)
+    textLabel.TextScaled = true
 
--- Criação da GUI
-local function criarGui()
-    local AutoChestsGui = Instance.new("ScreenGui", game.CoreGui)
-    local Frame = Instance.new("Frame", AutoChestsGui)
-    Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Frame.BackgroundTransparency = 0.5
-    Frame.BorderSizePixel = 2
-    Frame.Position = UDim2.new(0, 100, 0, 100)
-    Frame.Size = UDim2.new(0, 150, 0, 25)
-    Frame.Active = true
-    Frame.Draggable = true
+    espLabel.Parent = player.Character.Head
 
-    -- Adicionando outros elementos à GUI (como KillGui, Mini, etc.)
-    -- O código para adicionar esses elementos será adicionado aqui
-end
-
-criarGui()
--- Função para coletar baús
-local function coletarBaus()
-    while settings.Collect do
-        wait(settings.AutoCollectDelay)
-        for _, item in pairs(game:GetService("Workspace"):GetChildren()) do
-            if ehColetavel(item) and item:IsA("BasePart") then
-                fireproximityprompt(item.ProximityPrompt) -- Coletar o item
-            end
-        end
-    end
-end
-
--- Função para teleportar para o baú mais próximo
-local function teleportarParaBaus()
-    while settings.Teleport do
-        wait(settings.TeleportDelay)
-        local closestChest = nil
-        local shortestDistance = math.huge
-
-        for _, v in pairs(game:GetService("Workspace").chests:GetChildren()) do
-            if v:IsA("BasePart") then
-                local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Position).Magnitude
-                if distance < shortestDistance then
-                    shortestDistance = distance
-                    closestChest = v
-                end
-            end
-        end
-
-        if closestChest then
-            local tween = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = closestChest.CFrame})
-            tween:Play()
-            tween.Completed:Wait() -- Espera a animação terminar
-            fireproximityprompt(closestChest.ProximityPrompt) -- Coleta o baú
-        end
-    end
-end
--- Função para coletar baús
-local function coletarBaus()
-    while settings.Collect do
-        wait(settings.AutoCollectDelay)
-        for _, item in pairs(game:GetService("Workspace"):GetChildren()) do
-            if ehColetavel(item) and item:IsA("BasePart") then
-                fireproximityprompt(item.ProximityPrompt) -- Coletar o item
-            end
-        end
-    end
-end
-
--- Função para teleportar para o baú mais próximo
-local function teleportarParaBaus()
-    while settings.Teleport do
-        wait(settings.TeleportDelay)
-        local closestChest = nil
-        local shortestDistance = math.huge
-
-        for _, v in pairs(game:GetService("Workspace").chests:GetChildren()) do
-            if v:IsA("BasePart") then
-                local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Position).Magnitude
-                if distance < shortestDistance then
-                    shortestDistance = distance
-                    closestChest = v
-                end
-            end
-        end
-
-        if closestChest then
-            local tween = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = closestChest.CFrame})
-            tween:Play()
-            tween.Completed:Wait() -- Espera a animação terminar
-            fireproximityprompt(closestChest.ProximityPrompt) -- Coleta o baú
-        end
-    end
-end
--- Conexões de eventos para a GUI
-local function configurarGui()
-    -- Exemplo para um botão de coleta
-    local AutoCollectChests = Instance.new("TextButton", Frame)
-    AutoCollect Chests.Text = "Auto Collect Chests"
-    AutoCollectChests.Size = UDim2.new(0, 150, 0, 25)
-    AutoCollectChests.Position = UDim2.new(0, 0, 0, 25)
-    AutoCollectChests.Active = true
-    AutoCollectChests.Draggable = true
-
-    AutoCollectChests.MouseButton1Click:Connect(function()
-        settings.Collect = not settings.Collect
-        if settings.Collect then
-            coletarBaus()
+    -- Atualiza o texto com as coordenadas
+    RunService.RenderStepped:Connect(function()
+        if player.Character and player.Character:FindFirstChild("Head") then
+            local position = player.Character.Head.Position
+            textLabel.Text = string.format("X: %.2f\nY: %.2f\nZ: %.2f", position.X, position.Y, position.Z)
         else
-            print("Auto Collect Chests desativado.")
-        end
-    end)
-
-    -- Exemplo para um botão de teleporte
-    local TeleportToChests = Instance.new("TextButton", Frame)
-    TeleportToChests.Text = "Teleport to Chests"
-    TeleportToChests.Size = UDim2.new(0, 150, 0, 25)
-    TeleportToChests.Position = UDim2.new(0, 0, 0, 50)
-    TeleportToChests.Active = true
-    TeleportToChests.Draggable = true
-
-    TeleportToChests.MouseButton1Click:Connect(function()
-        settings.Teleport = not settings.Teleport
-        if settings.Teleport then
-            teleportarParaBaus()
-        else
-            print("Teleport to Chests desativado.")
+            espLabel:Destroy() -- Remove o ESP se o jogador não estiver mais no jogo
         end
     end)
 end
 
-configurarGui()
--- Função para coletar itens (baús e outros coletáveis)
-local function coletarItens()
-    while settings.Collect do
-        wait(settings.AutoCollectDelay)
-        for _, item in pairs(game:GetService("Workspace"):GetChildren()) do
-            if item:IsA("BasePart") and ehColetavel(item) then
-                fireproximityprompt(item.ProximityPrompt) -- Coletar o item
-            end
-        end
-    end
-end
-
--- Função para teleportar para o baú mais próximo
-local function teleportarParaBaus()
-    while settings.Teleport do
-        wait(settings.TeleportDelay)
-        local closestChest = nil
-        local shortestDistance = math.huge
-
-        for _, v in pairs(game:GetService("Workspace").chests:GetChildren()) do
-            if v:IsA("BasePart") then
-                local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Position).Magnitude
-                if distance < shortestDistance then
-                    shortestDistance = distance
-                    closestChest = v
-                end
-            end
-        end
-
-        if closestChest then
-            local tween = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = closestChest.CFrame})
-            tween:Play()
-            tween.Completed:Wait() -- Espera a animação terminar
-            fireproximityprompt(closestChest.ProximityPrompt) -- Coleta o baú
-        end
-    end
-end
--- Função para coletar itens (baús e outros coletáveis)
-local function coletarItens()
-    while settings.Collect do
-        wait(settings.AutoCollectDelay)
-        for _, item in pairs(game:GetService("Workspace"):GetChildren()) do
-            if item:IsA("BasePart") and ehColetavel(item) then
-                fireproximityprompt(item.ProximityPrompt) -- Coletar o item
-                print("Item coletado: " .. item.Name) -- Feedback no console
-            end
-        end
-    end
-end
-
--- Função para teleportar para o baú mais próximo
-local function teleportarParaBaus()
-    while settings.Teleport do
-        wait(settings.TeleportDelay)
-        local closestChest = nil
-        local shortestDistance = math.huge
-
-        for _, v in pairs(game:GetService("Workspace").chests:GetChildren()) do
-            if v:IsA("BasePart") then
-                local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Position).Magnitude
-                if distance < shortestDistance then
-                    shortestDistance = distance
-                    closestChest = v
-                end
-            end
-        end
-
-        if closestChest then
-            local tween = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = closestChest.CFrame})
-            tween:Play()
-            tween.Completed:Wait() -- Espera a animação terminar
-            fireproximityprompt(closestChest.ProximityPrompt) -- Coleta o baú
-            print("Teleportado para: " .. closestChest.Name) -- Feedback no console
-        end
-    end
-
-    -- Definição de variáveis globais
-local settings = {
-    Teleport = false,
-    Collect = false,
-    OpenAllChests = false,
-    Delete = false,
-    TeleportDelay = 0.2,
-    AutoCollectDelay = 0.1
-}
-
--- Nomes dos baús e itens adicionais que podem ser colet ados
-local baus = {"DarkChest_p", "Weeping Chest-p"}
-local outrosItens = {"Coin", "Gem"}
-
--- Função para verificar se um item é coletável
-local function ehColetavel(item)
-    for _, nome in ipairs(baus) do
-        if item.Name == nome then
-            return true
-        end
-    end
-    for _, nome in ipairs(outrosItens) do
-        if item.Name == nome then
-            return true
-        end
-    end
-    return false
-end
-
--- Remover itens existentes
-for _, v in pairs(game:GetService("Workspace"):GetDescendants()) do
-    if v.Name == "FloatPath" then
-        v:Destroy()
-    end
-end
-
--- Criação da GUI
-local function criarGui()
-    local AutoChestsGui = Instance.new("ScreenGui", game.CoreGui)
-    local Frame = Instance.new("Frame", AutoChestsGui)
-    Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Frame.BackgroundTransparency = 0.5
-    Frame.BorderSizePixel = 2
-    Frame.Position = UDim2.new(0, 100, 0, 100)
-    Frame.Size = UDim2.new(0, 150, 0, 25)
-    Frame.Active = true
-    Frame.Draggable = true
-
-    -- Adicionando outros elementos à GUI (como KillGui, Mini, etc.)
-    -- O código para adicionar esses elementos será adicionado aqui
-end
-
-criarGui()
-
--- Conexões de eventos para a GUI
-local function configurarGui()
-    -- Exemplo para um botão de coleta
-    local AutoCollectChests = Instance.new("TextButton", Frame)
-    AutoCollectChests.Text = "Auto Collect Chests"
-    AutoCollectChests.Size = UDim2.new(0, 150, 0, 25)
-    AutoCollectChests.Position = UDim2.new(0, 0, 0, 25)
-    AutoCollectChests.Active = true
-    AutoCollectChests.Draggable = true
-
-    AutoCollectChests.MouseButton1Click:Connect(function()
-        settings.Collect = not settings.Collect
-        if settings.Collect then
-            coletarItens()
-        else
-            print("Auto Collect Chests desativado.")
-        end
+-- Conectar eventos para jogadores que entram no jogo
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(character)
+        wait(1) -- Espera um pouco para garantir que a cabeça esteja disponível
+        createESP(player)
     end)
+end)
 
-    -- Exemplo para um botão de teleporte
-    local TeleportToChests = Instance.new("TextButton", Frame)
-    TeleportToChests.Text = "Teleport to Chests"
-    TeleportToChests.Size = UDim2.new(0, 150, 0, 25)
-    TeleportToChests.Position = UDim2.new(0, 0, 0, 50)
-    TeleportToChests.Active = true
-    TeleportToChests.Draggable = true
-
-    TeleportToChests.MouseButton1Click:Connect(function()
-        settings.Teleport = not settings.Teleport
-        if settings.Teleport then
-            teleportarParaBaus()
-        else
-            print("Teleport to Chests desativado.")
-        end
-    end)
-end
-
-configurarGui()
-
--- Função para coletar itens (baús e outros coletáveis)
-local function coletarItens()
-    while settings.Collect do
-        wait(settings.AutoCollectDelay)
-        for _, item in pairs(game:GetService("Workspace"):GetChildren()) do
-            if item:IsA("BasePart") and ehColetavel(item) then
-                fireproximityprompt(item.ProximityPrompt) -- Coletar o item
-                print("Item coletado: " .. item.Name) -- Feedback no console
-            end
-        end
-    end
-end
-
--- Função para teleportar para o baú mais próximo
-local function teleportarParaBaus()
-    while settings.Teleport do
-        wait(settings.TeleportDelay)
-        local closestChest = nil
-        local shortestDistance = math.huge
-
-        for _, v in pairs(game:GetService("Workspace").chests:GetChildren()) do
-            if v:IsA("BasePart") then
-                local distance = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Position).Magnitude
-                if distance < shortestDistance then
-                    shortestDistance = distance
-                    closestChest = v
-                end
-            end
-        end
-
-        if closestChest then
-            local tween = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = closestChest.CFrame})
-            tween:Play()
-            tween.Completed: Wait() -- Espera a animação terminar
-            fireproximityprompt(closestChest.ProximityPrompt) -- Coleta o baú
-            print("Teleportado para: " .. closestChest.Name) -- Feedback no console
-        end
+-- Para jogadores que já estão no jogo
+for _, player in ipairs(Players:GetPlayers()) do
+    if player.Character then
+        createESP(player)
     end
 end
